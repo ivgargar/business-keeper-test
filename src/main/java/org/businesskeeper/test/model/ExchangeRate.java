@@ -1,4 +1,4 @@
-package org.businesskeeper.test.controller;
+package org.businesskeeper.test.model;
 
 public class ExchangeRate {
 	private Double rate;

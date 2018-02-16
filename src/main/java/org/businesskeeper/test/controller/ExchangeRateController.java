@@ -9,7 +9,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.businesskeeper.test.service.ExchangeRateService;
+import org.businesskeeper.test.model.ExchangeRate;
+import org.businesskeeper.test.service.impl.ExchangeRateServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,7 +24,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 public class ExchangeRateController {
 	
 	@Autowired
-	ExchangeRateService exchangeRateService;
+	ExchangeRateServiceImpl exchangeRateService;
 	
     @RequestMapping("/{date}/{baseCurrency}/{targetCurrency}")
     public ExchangeRate getExchangeRate(@PathVariable String date, @PathVariable String baseCurrency, @PathVariable String targetCurrency) throws JsonParseException, JsonMappingException, IOException {

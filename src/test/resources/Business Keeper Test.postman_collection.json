@@ -1,0 +1,87 @@
+{
+	"info": {
+		"name": "Business Keeper Test",
+		"_postman_id": "354cddf0-d826-490b-5dd2-47860e0344fa",
+		"description": "Business Keeper Test",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get exchange rate",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:8080/api/exchange-rate/2000-01-01/EUR/USD",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"exchange-rate",
+						"2000-01-01",
+						"EUR",
+						"USD"
+					]
+				},
+				"description": "Get exchange rate"
+			},
+			"response": []
+		},
+		{
+			"name": "hello",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:8080",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080"
+				},
+				"description": "hello"
+			},
+			"response": []
+		},
+		{
+			"name": "[Fixer] Get exchange rate",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "https://api.fixer.io/2000-01-01?base=EUR&symbols=USD",
+					"protocol": "https",
+					"host": [
+						"api",
+						"fixer",
+						"io"
+					],
+					"path": [
+						"2000-01-01"
+					],
+					"query": [
+						{
+							"key": "base",
+							"value": "EUR",
+							"equals": true
+						},
+						{
+							"key": "symbols",
+							"value": "USD",
+							"equals": true
+						}
+					]
+				},
+				"description": "[Fixer] Get exchange rate"
+			},
+			"response": []
+		}
+	]
+}

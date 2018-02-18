@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "Business Keeper Test",
-		"_postman_id": "354cddf0-d826-490b-5dd2-47860e0344fa",
+		"_postman_id": "891c3a08-7e90-ebb1-5494-ceabccf9ce70",
 		"description": "Business Keeper Test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -28,24 +28,6 @@
 					]
 				},
 				"description": "Get exchange rate"
-			},
-			"response": []
-		},
-		{
-			"name": "hello",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"body": {},
-				"url": {
-					"raw": "http://localhost:8080",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080"
-				},
-				"description": "hello"
 			},
 			"response": []
 		},
@@ -80,6 +62,59 @@
 					]
 				},
 				"description": "[Fixer] Get exchange rate"
+			},
+			"response": []
+		},
+		{
+			"name": "Get daily history",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:8080/api/exchange-rate/history/daily/2000/01/01",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"exchange-rate",
+						"history",
+						"daily",
+						"2000",
+						"01",
+						"01"
+					]
+				},
+				"description": "Get daily history"
+			},
+			"response": []
+		},
+		{
+			"name": "Get monthly history",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:8080/api/exchange-rate/history/monthly/2000/01",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"exchange-rate",
+						"history",
+						"monthly",
+						"2000",
+						"01"
+					]
+				},
+				"description": "Get monthly history"
 			},
 			"response": []
 		}

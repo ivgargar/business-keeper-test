@@ -74,7 +74,7 @@ public class ExchangeRateController {
 		LocalDate localDate = LocalDate.parse(date);
 		LocalDate minimum = LocalDate.parse(Constants.MINIMUM_DATE);
 		LocalDate yesterday = LocalDate.now().minusDays(1);
-		if (!isInValidRange(localDate, minimum, yesterday)) {
+		if (!isValidDateRange(localDate, minimum, yesterday)) {
 			throw new IncorrectInputParameterException("Not a valid date. Date must be between " + minimum.toString() + " and yesterday");
 		}
 		
@@ -189,7 +189,7 @@ public class ExchangeRateController {
 		return true;
 	}
 	
-	public boolean isInValidRange(LocalDate date, LocalDate min, LocalDate max) {
+	public boolean isValidDateRange(LocalDate date, LocalDate min, LocalDate max) {
 		if (date.isBefore(min) || date.isAfter(max)) {
 			return false;
 		}

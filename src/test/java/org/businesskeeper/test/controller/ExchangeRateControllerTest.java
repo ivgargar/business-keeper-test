@@ -6,7 +6,7 @@ import java.io.IOException;
 
 import org.businesskeeper.test.exception.IncorrectInputParameterException;
 import org.businesskeeper.test.model.ExchangeRate;
-import org.businesskeeper.test.service.impl.ExchangeRateServiceImpl;
+import org.businesskeeper.test.service.impl.FixerIoServiceImpl;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 public class ExchangeRateControllerTest {
 	
 	@Mock
-	ExchangeRateServiceImpl exchangeRateService;
+	FixerIoServiceImpl exchangeRateService;
 	
 	@InjectMocks
 	private ExchangeRateController exchangeRateController = new ExchangeRateController();

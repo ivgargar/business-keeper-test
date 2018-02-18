@@ -14,7 +14,8 @@ import org.businesskeeper.test.entity.ExchangeRateEntity;
 import org.businesskeeper.test.enums.Trend;
 import org.businesskeeper.test.exception.IncorrectInputParameterException;
 import org.businesskeeper.test.model.ExchangeRate;
-import org.businesskeeper.test.service.impl.FixerIoServiceImpl;
+import org.businesskeeper.test.model.ExchangeRateHistory;
+import org.businesskeeper.test.service.FixerIoService;
 import org.businesskeeper.test.util.DateUtil;
 import org.businesskeeper.test.util.TrendUtil;
 import org.slf4j.Logger;
@@ -29,7 +30,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * REST Controller for Exchange Rate API Test
+ * REST Controller for Exchange Rate API Test.
  * @author Ivan
  *
  */
@@ -40,7 +41,7 @@ public class ExchangeRateController {
 	private final Logger log = LoggerFactory.getLogger(this.getClass());
 	
 	@Autowired
-	FixerIoServiceImpl fixerIoService;
+	FixerIoService fixerIoService;
 	
     @Autowired
     ExchangeRateRepository exchangeRateRepository;
@@ -49,7 +50,7 @@ public class ExchangeRateController {
     CurrencyRepository currencyRepository;
 	
     /**
-     * REST service to display exchange rates.
+     * Service to display exchange rates.
      * @param date the requested date
      * @param baseCurrency the base currency
      * @param targetCurrency the target currency
@@ -161,18 +162,51 @@ public class ExchangeRateController {
         return new ResponseEntity<ExchangeRate>(exchangeRate, HttpStatus.OK);
     }
     
+    /**
+     * Returns the daily history.
+     * @param year the requested year
+     * @param month the requested month
+     * @param day the requested day
+     * @return a list of exchange rates queried that date
+     */
     @RequestMapping("/history/daily/{yyyy}/{MM}/{dd}")
-    public List<ExchangeRateEntity> getHistoryDaily(@PathVariable("yyyy") String year, @PathVariable("MM") String month, @PathVariable("dd") String day) {
-    	return exchangeRateRepository.findByDate(LocalDate.of(Integer.parseInt(year), Integer.parseInt(month), Integer.parseInt(day)));
+    public List<ExchangeRateHistory> getDailyHistory(@PathVariable("yyyy") String year, @PathVariable("MM") String month, @PathVariable("dd") String day) {
+    		List<ExchangeRateEntity> exchangeRateEntityList = exchangeRateRepository.findByDate(LocalDate.of(Integer.parseInt(year), Integer.parseInt(month), Integer.parseInt(day)));
+    		
+    		List<ExchangeRateHistory> exchangeRateHistoryList = new ArrayList<ExchangeRateHistory>();
+    		for (ExchangeRateEntity exchangeRateEntity : exchangeRateEntityList) {
+    			ExchangeRateHistory exchangeRateHistory = new ExchangeRateHistory(exchangeRateEntity.getDate().toString(), exchangeRateEntity.getBaseCurrency(), exchangeRateEntity.getTargetCurrency(), exchangeRateEntity.getRate());
+    			exchangeRateHistoryList.add(exchangeRateHistory);
+    		}
+    		
+    		return exchangeRateHistoryList;
     }
     
+    /**
+     * Returns the monthly history.
+     * @param year the requested year
+     * @param month the requested month
+     * @return a list of exchange rates queried that date
+     */
     @RequestMapping("/history/monthly/{yyyy}/{MM}")
-    public List<ExchangeRateEntity> getHistoryMonthly(@PathVariable("yyyy") String year, @PathVariable("MM") String month) {
-    	LocalDate min = LocalDate.of(Integer.parseInt(year), Integer.parseInt(month), 1);
-    	LocalDate max = LocalDate.of(Integer.parseInt(year), Integer.parseInt(month), min.lengthOfMonth()); 
-    	return exchangeRateRepository.findByDateBetween(min, max);
+    public List<ExchangeRateHistory> getMonthlyHistory(@PathVariable("yyyy") String year, @PathVariable("MM") String month) {
+	    	LocalDate min = LocalDate.of(Integer.parseInt(year), Integer.parseInt(month), 1);
+	    	LocalDate max = LocalDate.of(Integer.parseInt(year), Integer.parseInt(month), min.lengthOfMonth()); 
+	    	List<ExchangeRateEntity> exchangeRateEntityList = exchangeRateRepository.findByDateBetween(min, max);
+    		List<ExchangeRateHistory> exchangeRateHistoryList = new ArrayList<ExchangeRateHistory>();
+    		for (ExchangeRateEntity exchangeRateEntity : exchangeRateEntityList) {
+    			ExchangeRateHistory exchangeRateHistory = new ExchangeRateHistory(exchangeRateEntity.getDate().toString(), exchangeRateEntity.getBaseCurrency(), exchangeRateEntity.getTargetCurrency(), exchangeRateEntity.getRate());
+    			exchangeRateHistoryList.add(exchangeRateHistory);
+    		}
+    		
+    		return exchangeRateHistoryList;
     }
     
+    /**
+     * Validates the date format.
+     * @param date the input string with the date
+     * @return true if date has correct format
+     */
 	public boolean isValidDateFormat(String date) {
 		if (!date.matches(Constants.ISO_DATE_FORMAT)) {
 			return false;
@@ -180,8 +214,14 @@ public class ExchangeRateController {
 		return true;
 	}
 	
+	/**
+	 * Validates the date.
+	 * @param date the input string with the date
+	 * @return true if date is correct
+	 */
 	public boolean isValidDate(String date) {
 		try {
+			@SuppressWarnings("unused")
 			LocalDate localDate = LocalDate.parse(date);
 		} catch (DateTimeParseException ex) {
 			return false;
@@ -189,6 +229,13 @@ public class ExchangeRateController {
 		return true;
 	}
 	
+	/**
+	 * Validates if an input date is between min and max dates.
+	 * @param date the input date
+	 * @param min the minimun date
+	 * @param max the maximum date
+	 * @return true if the input date is between min and max
+	 */
 	public boolean isValidDateRange(LocalDate date, LocalDate min, LocalDate max) {
 		if (date.isBefore(min) || date.isAfter(max)) {
 			return false;
@@ -196,6 +243,11 @@ public class ExchangeRateController {
 		return true;
 	}
 	
+	/**
+	 * Validates currency format.
+	 * @param currency the currency
+	 * @return true if currency has correct format
+	 */
 	public boolean isValidCurrencyFormat(String currency) {
 		if (!currency.matches(Constants.CURRENCY_FORMAT)) {
 			return false;
@@ -203,6 +255,11 @@ public class ExchangeRateController {
 		return true;
 	}
     
+	/**
+	 * Validates currency.
+	 * @param currency the currency
+	 * @return true if the currency is valid
+	 */
 	public boolean isValidCurrency(String currency) {
 		CurrencyEntity curr = currencyRepository.findByName(currency);
 		if (curr == null) {

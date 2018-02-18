@@ -1,17 +1,24 @@
 package org.businesskeeper.test.controller;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.businesskeeper.test.constants.Constants;
 import org.businesskeeper.test.dao.CurrencyRepository;
+import org.businesskeeper.test.dao.ExchangeRateRepository;
 import org.businesskeeper.test.entity.CurrencyEntity;
+import org.businesskeeper.test.entity.ExchangeRateEntity;
+import org.businesskeeper.test.enums.Trend;
 import org.businesskeeper.test.exception.IncorrectInputParameterException;
 import org.businesskeeper.test.model.ExchangeRate;
+import org.businesskeeper.test.model.ExchangeRateHistory;
 import org.businesskeeper.test.service.impl.FixerIoServiceImpl;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -41,6 +48,9 @@ public class ExchangeRateControllerTest {
 	
 	@Mock
     CurrencyRepository currencyRepository;
+	
+	@Mock
+    ExchangeRateRepository exchangeRateRepository;
 	
 	@InjectMocks
 	private ExchangeRateController exchangeRateController = new ExchangeRateController();
@@ -160,31 +170,110 @@ public class ExchangeRateControllerTest {
 	
 	@Test
 	public void testGetExchangeRateWithInvalidBaseCurrencyFormat() {
-		
+        thrown.expect(IncorrectInputParameterException.class);
+        thrown.expectMessage("Incorrect base currency format");
+        
+		Mockito.when(currencyRepository.findByName("aaa")).thenReturn(null);
+		Mockito.when(fixerIoService.isValidCurrency("aaa")).thenReturn(false);
+        
+		ResponseEntity<ExchangeRate> exchangeRate = exchangeRateController.getExchangeRate(LocalDate.parse(Constants.MINIMUM_DATE).toString(), "aaa", "USD");
 	}
 	
 	@Test
 	public void testGetExchangeRateWithInvalidTargetCurrencyFormat() {
-		
+        thrown.expect(IncorrectInputParameterException.class);
+        thrown.expectMessage("Incorrect target currency format");
+        
+		CurrencyEntity eurCurrencyEntity = new CurrencyEntity("EUR");
+		Mockito.when(currencyRepository.findByName("EUR")).thenReturn(eurCurrencyEntity);
+		Mockito.when(currencyRepository.findByName("bbb")).thenReturn(null);
+		Mockito.when(fixerIoService.isValidCurrency("bbb")).thenReturn(false);
+        
+		ResponseEntity<ExchangeRate> exchangeRate = exchangeRateController.getExchangeRate(LocalDate.parse(Constants.MINIMUM_DATE).toString(), "EUR", "bbb");
 	}
 	
 	@Test
 	public void testGetExchangeRateWithInvalidBaseCurrency() {
-		
+        thrown.expect(IncorrectInputParameterException.class);
+        thrown.expectMessage("not available");
+        
+		Mockito.when(currencyRepository.findByName("PIP")).thenReturn(null);
+		Mockito.when(fixerIoService.isValidCurrency("PIP")).thenReturn(false);
+        
+		ResponseEntity<ExchangeRate> exchangeRate = exchangeRateController.getExchangeRate(LocalDate.parse(Constants.MINIMUM_DATE).toString(), "PIP", "USD");
 	}
 	
 	@Test
 	public void testGetExchangeRateWithInvalidTargetCurrency() {
-		
+        thrown.expect(IncorrectInputParameterException.class);
+        thrown.expectMessage("not available");
+        
+		CurrencyEntity eurCurrencyEntity = new CurrencyEntity("EUR");
+		Mockito.when(currencyRepository.findByName("EUR")).thenReturn(eurCurrencyEntity);
+		Mockito.when(currencyRepository.findByName("PIP")).thenReturn(null);
+		Mockito.when(fixerIoService.isValidCurrency("PIP")).thenReturn(false);
+        
+		ResponseEntity<ExchangeRate> exchangeRate = exchangeRateController.getExchangeRate(LocalDate.parse(Constants.MINIMUM_DATE).toString(), "EUR", "PIP");
 	}
 	
-	
-	@Ignore
 	@Test
 	public void testGetExchangeRate() throws JsonParseException, JsonMappingException, IncorrectInputParameterException, IOException {
-		ResponseEntity<ExchangeRate> exchangeRate = exchangeRateController.getExchangeRate("2000-01-01", "EUR", "USD");
+		LocalDate localDate = LocalDate.parse(Constants.MINIMUM_DATE);
+		Double rate = new Double(1.234);
+		
+		CurrencyEntity eurCurrencyEntity = new CurrencyEntity("EUR");
+		Mockito.when(currencyRepository.findByName("EUR")).thenReturn(eurCurrencyEntity);
+		
+		CurrencyEntity usdCurrencyEntity = new CurrencyEntity("USD");
+		Mockito.when(currencyRepository.findByName("USD")).thenReturn(usdCurrencyEntity);
+		
+		Mockito.when(fixerIoService.getExchangeRate(Mockito.any(LocalDate.class), Mockito.anyString(), Mockito.anyString())).thenReturn(rate);
+		
+		ResponseEntity<ExchangeRate> exchangeRate = exchangeRateController.getExchangeRate(localDate.toString(), "EUR", "USD");
 		
 		assertNotNull(exchangeRate);
+		assertNotNull(exchangeRate.getBody());
+		ExchangeRate exchangeRateBody =  exchangeRate.getBody();
+		assertEquals(exchangeRateBody.getRate(), rate);
+		assertEquals(exchangeRateBody.getAverage(), rate);
+		assertEquals(exchangeRateBody.getTrend(), Trend.CONSTANT.getTrend());
 	}
 	
+	
+	@Test
+	public void testGetDailyHistory() {
+		List<ExchangeRateEntity> exchangeRateEntityList = new ArrayList<ExchangeRateEntity>();
+		ExchangeRateEntity exchangeRateEntity = new ExchangeRateEntity(LocalDate.parse("2000-01-01"), "EUR", "USD", new Double(1.234));
+		exchangeRateEntityList.add(exchangeRateEntity);
+		
+		Mockito.when(exchangeRateRepository.findByDate(LocalDate.of(2000, 1, 1))).thenReturn(exchangeRateEntityList);
+		
+		List<ExchangeRateHistory> exchangeRateHistoryList = exchangeRateController.getDailyHistory("2000", "01", "01");
+		assertNotNull(exchangeRateHistoryList);
+		assertTrue(exchangeRateHistoryList.size() == 1);
+		assertEquals("2000-01-01", exchangeRateHistoryList.get(0).getDate());
+		assertEquals("EUR", exchangeRateHistoryList.get(0).getBaseCurrency());
+		assertEquals("USD", exchangeRateHistoryList.get(0).getTargetCurrency());
+		assertEquals(new Double(1.234), exchangeRateHistoryList.get(0).getRate());
+	}
+	
+	@Test
+	public void testGetMonthlyHistory() {
+		List<ExchangeRateEntity> exchangeRateEntityList = new ArrayList<ExchangeRateEntity>();
+		ExchangeRateEntity exchangeRateEntity = new ExchangeRateEntity(LocalDate.parse("2000-01-01"), "EUR", "USD", new Double(1.234));
+		exchangeRateEntityList.add(exchangeRateEntity);
+		
+	    	LocalDate min = LocalDate.of(2000, 1, 1);
+	    	LocalDate max = LocalDate.of(2000, 1, min.lengthOfMonth());
+		
+		Mockito.when(exchangeRateRepository.findByDateBetween(min, max)).thenReturn(exchangeRateEntityList);
+		
+		List<ExchangeRateHistory> exchangeRateHistoryList = exchangeRateController.getMonthlyHistory("2000", "01");
+		assertNotNull(exchangeRateHistoryList);
+		assertTrue(exchangeRateHistoryList.size() == 1);
+		assertEquals("2000-01-01", exchangeRateHistoryList.get(0).getDate());
+		assertEquals("EUR", exchangeRateHistoryList.get(0).getBaseCurrency());
+		assertEquals("USD", exchangeRateHistoryList.get(0).getTargetCurrency());
+		assertEquals(new Double(1.234), exchangeRateHistoryList.get(0).getRate());
+	}
 }

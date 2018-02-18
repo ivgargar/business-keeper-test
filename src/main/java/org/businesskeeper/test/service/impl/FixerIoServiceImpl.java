@@ -12,6 +12,11 @@ import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * Implementation of api.fixer.io REST services. 
+ * @author ivgargar
+ *
+ */
 @Service
 public class FixerIoServiceImpl implements FixerIoService {
 	

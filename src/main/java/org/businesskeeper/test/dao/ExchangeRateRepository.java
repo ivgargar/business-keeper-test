@@ -6,6 +6,11 @@ import java.util.List;
 import org.businesskeeper.test.entity.ExchangeRateEntity;
 import org.springframework.data.repository.CrudRepository;
 
+/**
+ * Crud repository for exchange rates.
+ * @author ivgargar
+ *
+ */
 public interface ExchangeRateRepository extends CrudRepository<ExchangeRateEntity, Long> {
 	ExchangeRateEntity findByDateAndBaseCurrencyAndTargetCurrency(LocalDate date, String baseCurrency, String targetCurrency);
 	

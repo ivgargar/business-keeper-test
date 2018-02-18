@@ -89,7 +89,9 @@ public class ExchangeRateController {
 			throw new IncorrectInputParameterException("Base currency " + baseCurrency + " not available");
 		}
 		CurrencyEntity baseCurr = new CurrencyEntity(baseCurrency);
-		currencyRepository.save(baseCurr);
+		if (currencyRepository.findByName(baseCurrency) == null) {
+			currencyRepository.save(baseCurr);
+		}
 		
 		log.info("Validating target currency");
 		if (!isValidCurrencyFormat(targetCurrency)) {
@@ -99,7 +101,9 @@ public class ExchangeRateController {
 			throw new IncorrectInputParameterException("Target currency " + targetCurrency + " not available");
 		}
 		CurrencyEntity targetCurr = new CurrencyEntity(targetCurrency);
-		currencyRepository.save(targetCurr);
+		if (currencyRepository.findByName(targetCurrency) == null) {
+			currencyRepository.save(targetCurr);
+		}
 		
 		
 		ExchangeRate exchangeRate = new ExchangeRate();

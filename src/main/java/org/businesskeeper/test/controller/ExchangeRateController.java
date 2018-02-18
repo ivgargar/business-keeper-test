@@ -10,11 +10,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.businesskeeper.test.dao.ExchangeRateRepository;
+import org.businesskeeper.test.entity.ExchangeRateEntity;
+import org.businesskeeper.test.enums.Trend;
 import org.businesskeeper.test.exception.IncorrectInputParameterException;
 import org.businesskeeper.test.model.ExchangeRate;
 import org.businesskeeper.test.service.impl.ExchangeRateServiceImpl;
+import org.businesskeeper.test.util.TrendUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,11 +33,11 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 @RequestMapping("/api/exchange-rate")
 public class ExchangeRateController {
 	
-	@Value("${minimum.date.range}")
-	private String minimumDateRange;
-
 	@Autowired
 	ExchangeRateServiceImpl exchangeRateService;
+	
+    @Autowired
+    ExchangeRateRepository exchangeRateRepository;
 	
     @RequestMapping(method = RequestMethod.GET, 
                     value = "/{date}/{baseCurrency}/{targetCurrency}", 
@@ -55,29 +58,38 @@ public class ExchangeRateController {
     		}
     		
     		//validate date range between minimum date range and yesterday
-    		if (localDate.isBefore(LocalDate.parse(minimumDateRange))) {
-    			throw new IncorrectInputParameterException("Incorrect Date. Date before " + minimumDateRange);
+    		if (localDate.isBefore(LocalDate.parse("2000-01-01"))) {
+    			throw new IncorrectInputParameterException("Incorrect Date. Date before " + "2000-01-01");
     		}
     		LocalDate yesterday = LocalDate.now().minusDays(1);
     		if (localDate.isAfter(yesterday)) {
     			throw new IncorrectInputParameterException("Incorrect Date. Date after " + yesterday);
     		}
-    		
 	    	
-    		// get the exchange rate for the given date
     		ExchangeRate exchangeRate = new ExchangeRate();
-    		Double rate = exchangeRateService.getExchangeRate(localDate, baseCurrency, targetCurrency);
-    		exchangeRate.setRate(rate);
+    		
+    		// check if the rate already exists in DB
+    		ExchangeRateEntity exchangeRateEntity = exchangeRateRepository.findByDateAndBaseCurrencyAndTargetCurrency(localDate, baseCurrency, targetCurrency);
+    		if (exchangeRateEntity != null) {
+    			exchangeRate.setRate(exchangeRateEntity.getRate());
+    		} else {
+    			// if the rate doesn't exist call the fixer service
+    			// then insert the data in DB
+    			Double rate = exchangeRateService.getExchangeRate(localDate, baseCurrency, targetCurrency);
+    			exchangeRate.setRate(rate);
+				exchangeRateRepository.save(new ExchangeRateEntity(localDate, baseCurrency, targetCurrency, rate));
+    		}
     		
     		// get the exchange rate for the previous 5 days excluding Saturday and Sunday
     		int lastFiveDaysCont = 1;
     		int cont = 1;
     		List<Double> lastFiveDaysExchangeRateList = new ArrayList<Double>();
-    		while (lastFiveDaysCont < 5) {
+    		while (lastFiveDaysCont <= 5) {
     			LocalDate auxLocalDate = localDate.minusDays(cont);
     			if (!DayOfWeek.SATURDAY.equals(DayOfWeek.of(auxLocalDate.get(ChronoField.DAY_OF_WEEK)))
     					&& !DayOfWeek.SUNDAY.equals(DayOfWeek.of(auxLocalDate.get(ChronoField.DAY_OF_WEEK)))) {
-    				lastFiveDaysExchangeRateList.add(exchangeRateService.getExchangeRate(auxLocalDate, baseCurrency, targetCurrency));
+    				Double exchange = exchangeRateService.getExchangeRate(auxLocalDate, baseCurrency, targetCurrency);
+    				lastFiveDaysExchangeRateList.add(exchange);
     				lastFiveDaysCont++;
     			}
     			cont++;
@@ -87,6 +99,19 @@ public class ExchangeRateController {
     		
     		// calculate trend
     		Collections.reverse(lastFiveDaysExchangeRateList);
+    		
+    		double[] lastFiveDaysExchangeRateArray = lastFiveDaysExchangeRateList.stream().mapToDouble(Double::doubleValue).toArray();
+    		
+    		Trend trend = Trend.UNDEFINED;
+    		if (TrendUtil.isAscendingTrend(lastFiveDaysExchangeRateArray)) {
+    			trend = Trend.ASCENDING;
+    		} else if (TrendUtil.isDescendingTrend(lastFiveDaysExchangeRateArray)) {
+    			trend = Trend.DESCENDING;
+    		} else if (TrendUtil.isConstantTrend(lastFiveDaysExchangeRateArray)) {
+    			trend = Trend.CONSTANT;
+    		}
+    		
+    		exchangeRate.setTrend(trend.getTrend());
     		
         return new ResponseEntity<ExchangeRate>(exchangeRate, HttpStatus.OK);
     }
@@ -100,4 +125,5 @@ public class ExchangeRateController {
     public String getHistoryMonthly(@PathVariable String year, @PathVariable String month) {
     		return "History Daily";
     }
+    
 }

@@ -1,4 +1,4 @@
-package org.businesskeeper.test.app;
+package org.businesskeeper.test;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
